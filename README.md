@@ -1,4 +1,4 @@
-# psylearnNNGLM
+# InferLearningANNGLM
 
 This repository implements models to approximate animal learning rules using DNNs or RNNs on the IBL dataset. It follows the setup and data used in [1], along with the code environment from https://github.com/pillowlab/psytrack_learning. 
 
