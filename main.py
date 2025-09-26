@@ -54,8 +54,8 @@ animal_name = args.animal_name
 truncation_len = args.trunc_len 
 hidden_size = args.hidden_size 
 
-TRAIN_ONLY = True # False for cross-validation 
-RUN_TEST = False # True for test data at the end 
+TRAIN_ONLY = True # False for cross-validation (by heldout animal) 
+RUN_TEST = False # True for test future 500 trials data 
 
 # Set matplotlib defaults from making files editable and consistent in Illustrator 
 colors = psy.COLORS
@@ -214,7 +214,7 @@ answer_data = torch.tensor(answer_data, dtype=torch.float32).unsqueeze(-1)
 
 # Stack input data
 # Input positions correspond to how DNN/RNNGLM is coded, some input will be used for the GLM regression and learning rule function 
-inputs = torch.cat([stimulus[:,1:], stimulus[:,:-1], torch.ones_like(stimulus[:,:-1]), day_start[:,:-1], choices[:,:-1], reward_data[:,:-1], answer_data[:,:-1]], dim=-1) 
+inputs = torch.cat([stimulus[:,1:], stimulus[:,:-1], torch.ones_like(stimulus[:,:-1]), day_start[:,:-1], choices[:,:-1], reward_data[:,:-1]], dim=-1) 
 target = choices[:,1:] # target = choices[1:] # Target is binary, shape (4999, 1) 
     
 #%%############################################################################
@@ -426,7 +426,7 @@ if RUN_TEST: # Get test data from future TEST_LEN trials
     test_reward_data = torch.tensor(test_reward_data, dtype=torch.float32).unsqueeze(-1)
     test_answer_data = torch.tensor(test_answer_data, dtype=torch.float32).unsqueeze(-1) 
     test_inputs = torch.cat([test_stimulus[:,1:], test_stimulus[:,:-1], torch.ones_like(test_stimulus[:,:-1]), \
-                             test_day_start[:,:-1], test_choices[:,:-1], test_reward_data[:,:-1], test_answer_data[:,:-1]], dim=-1) 
+                             test_day_start[:,:-1], test_choices[:,:-1], test_reward_data[:,:-1]], dim=-1) 
     test_target = test_choices[:,1:] 
     
     # Test the model 
@@ -445,7 +445,7 @@ if RUN_TEST: # Get test data from future TEST_LEN trials
 ## Plot dW function 
 # Setup grid input data 
 cond_past = True # condition on past trials? You can change this 
-SS=3 # number of past trials to condition on... You can change this 
+SS=2 # number of past trials to condition on... You can change this 
 
 set_ylim = [-0.05, 0.05] 
 x_val = np.array([-1.        , -0.98670389, -0.84836067, -0.55465008, -0.30273722, 0.,
@@ -482,7 +482,7 @@ w_stack = torch.cat([w_vals, b_vals], axis=-1)
 answer_data = (stimulus > 0).float()
 reward_data = (choices == answer_data).float()
 day_start = torch.zeros_like(choices) 
-inputs_stack = torch.cat([stimulus, stimulus, torch.ones_like(stimulus), day_start, choices, reward_data, answer_data], dim=-1)
+inputs_stack = torch.cat([stimulus, stimulus, torch.ones_like(stimulus), day_start, choices, reward_data], dim=-1)
 
 # Get dW and plot
 W0_est = w_stack 
@@ -565,8 +565,10 @@ if cond_past:
     for ww in range(len(wref_list)):
         wref = wref_list[ww]
         plt.subplot(1, len(wref_list), ww+1)
-        plt.plot(x_smooth, dW_poscond_dict['correct'][str(wref)], color='k', marker='.', linestyle='-', linewidth=0.5, label='Past S=3 trials rewarded')
-        plt.plot(x_smooth, dW_negcond_dict['correct'][str(wref)], color='r', marker='.', linestyle='-', linewidth=0.5, label='Past S=3 trials unrewarded')
+        plt.plot(x_smooth, dW_poscond_dict['correct'][str(wref)], color='k', marker='.', linestyle='-', linewidth=0.5, label='Past S='+str(SS)+' trials rewarded')
+        plt.plot(x_smooth, dW_negcond_dict['correct'][str(wref)], color='r', marker='.', linestyle='-', linewidth=0.5, label='Past S='+str(SS)+' trials unrewarded')
+        #plt.plot(x_smooth, dW_poscond_dict['incorrect'][str(wref)], color='k', marker='.', linestyle='--', linewidth=0.5, label='Past S='+str(SS)+' trials rewarded, current incorrect')
+        #plt.plot(x_smooth, dW_negcond_dict['incorrect'][str(wref)], color='r', marker='.', linestyle='--', linewidth=0.5, label='Past S='+str(SS)+' trials unrewarded, current incorrect')
         plt.xlabel(r'$\mathbf{X}$', fontsize=16)
         plt.ylabel(r'$\mathbf{\Delta W}$', fontsize=16)               
         plt.ylim(set_ylim)        

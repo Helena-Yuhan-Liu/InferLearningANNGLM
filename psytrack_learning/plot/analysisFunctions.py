@@ -3,8 +3,8 @@ from matplotlib import pyplot as plt
 from scipy.ndimage import gaussian_filter
 
 COLORS = {'bias' : '#FAA61A', 
-          'Wbias' : '#333333',  # A dark gray, closer to black
-          'Wstim' : '#00AA00',  # A green color
+          'Wbias' : '#00AA00',  # A dark gray, closer to black
+          'Wstim' : '#333333',  # A green color
           's1' : "#A9373B", 's2' : "#2369BD", 
           's_a' : "#A9373B", 's_b' : "#2369BD", 
           'sR' : "#A9373B", 'sL' : "#2369BD",
