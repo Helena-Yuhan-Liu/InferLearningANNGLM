@@ -55,7 +55,6 @@ truncation_len = args.trunc_len
 hidden_size = args.hidden_size 
 
 TRAIN_ONLY = True # False for cross-validation (by heldout animal) 
-RUN_TEST = False # True for test future 500 trials data 
 
 # Set matplotlib defaults from making files editable and consistent in Illustrator 
 colors = psy.COLORS
@@ -388,55 +387,6 @@ if not TRAIN_ONLY:
     mean_test_score = np.mean(test_scores)
     std_test_score = np.std(test_scores)
     print(f'Average Val LL: {mean_test_score:.4f}, +/- {std_test_score:.4f}')
-        
-if RUN_TEST: # Get test data from future TEST_LEN trials  
-    TEST_LEN = 500 
-    jj=0 
-    for animal_ii in animal_list: 
-        orig_dat = getMouse(animal_ii, 5)
-        seg_dat = psy.trim(orig_dat, START=START, END=(END+TEST_LEN))
-        
-        stimulus_ii = np.squeeze(seg_dat['inputs']['cBoth'])  # shape (5000,)
-        day_start_ii = np.zeros_like(stimulus_ii)
-        try:
-            day_start_ii[np.cumsum(seg_dat['dayLength']).astype(int)] = 1 
-        except: 
-            day_start_ii[np.cumsum(seg_dat['dayLength'][:-1]).astype(int)] = 1 
-        choices_ii = seg_dat['y']  # shape (5000,)
-        reward_data_ii = (seg_dat['answer'] == seg_dat['y']).astype(float) # shape (5000,)
-        answer_data_ii = seg_dat['answer'] # unsqueeze to create the batch dimension!! 
-        
-        if jj==0:
-            test_stimulus = stimulus_ii[None,:] 
-            test_day_start = day_start_ii[None,:]
-            test_choices = choices_ii[None,:]
-            test_reward_data = reward_data_ii[None,:]
-            test_answer_data = answer_data_ii[None,:]
-        else:
-            test_stimulus = np.concatenate((test_stimulus, stimulus_ii[None,:]), axis=0)
-            test_day_start = np.concatenate((test_day_start, day_start_ii[None,:]), axis=0)
-            test_choices = np.concatenate((test_choices, choices_ii[None,:]), axis=0)
-            test_reward_data = np.concatenate((test_reward_data, reward_data_ii[None,:]), axis=0)
-            test_answer_data = np.concatenate((test_answer_data, answer_data_ii[None,:]), axis=0)
-        jj+=1 
-
-    test_stimulus = torch.tensor(test_stimulus, dtype=torch.float32).unsqueeze(-1) # unsqueeze to create the neuron dimension 
-    test_choices = torch.tensor(test_choices, dtype=torch.float32).unsqueeze(-1)  
-    test_day_start = torch.tensor(test_day_start, dtype=torch.float32).unsqueeze(-1)
-    test_reward_data = torch.tensor(test_reward_data, dtype=torch.float32).unsqueeze(-1)
-    test_answer_data = torch.tensor(test_answer_data, dtype=torch.float32).unsqueeze(-1) 
-    test_inputs = torch.cat([test_stimulus[:,1:], test_stimulus[:,:-1], torch.ones_like(test_stimulus[:,:-1]), \
-                             test_day_start[:,:-1], test_choices[:,:-1], test_reward_data[:,:-1]], dim=-1) 
-    test_target = test_choices[:,1:] 
-    
-    # Test the model 
-    final_model.eval() 
-    W0_est = torch.zeros((test_inputs.shape[0], output_size)) 
-    h = final_model.init_hidden(test_inputs, W0_est.detach()).to(inputs.device) 
-    test_outputs, _, _ = final_model(test_inputs, h)  
-    log_likelihood_test = -nn.BCELoss()(test_outputs[:,-TEST_LEN:].reshape(-1), \
-                             test_target[:,-TEST_LEN:].reshape(-1).float()).item() 
-    print(f'Test Log-Likelihood: {log_likelihood_test:.4f}')   
 
 #%%############################################################################
 #                       Plot results   
