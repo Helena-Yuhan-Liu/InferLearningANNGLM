@@ -187,21 +187,21 @@ for animal_ii in animal_list:
     except: 
         day_start_ii[np.cumsum(seg_dat['dayLength'][:-1]).astype(int)] = 1 
     choices_ii = seg_dat['y']  # shape (5000,)
-    reward_data_ii = (seg_dat['answer'] == seg_dat['y']).astype(float) # shape (5000,)
-    answer_data_ii = seg_dat['answer'] # unsqueeze to create the batch dimension!! 
+    reward_data_ii = (seg_dat['answer'] == seg_dat['y']).astype(float) # shape (5000,) 
+    side_data_ii = (stimulus_ii > 0).astype(np.float32) 
     
     if jj==0:
         stimulus = stimulus_ii[None,:] 
         day_start = day_start_ii[None,:]
         choices = choices_ii[None,:]
         reward_data = reward_data_ii[None,:]
-        answer_data = answer_data_ii[None,:]
+        side_data = side_data_ii[None,:]
     else:
         stimulus = np.concatenate((stimulus, stimulus_ii[None,:]), axis=0)
         day_start = np.concatenate((day_start, day_start_ii[None,:]), axis=0)
         choices = np.concatenate((choices, choices_ii[None,:]), axis=0)
         reward_data = np.concatenate((reward_data, reward_data_ii[None,:]), axis=0)
-        answer_data = np.concatenate((answer_data, answer_data_ii[None,:]), axis=0)
+        side_data = np.concatenate((side_data, side_data_ii[None,:]), axis=0)
     jj+=1 
     
 # Convert numpy arrays to PyTorch tensors 
@@ -209,11 +209,11 @@ stimulus = torch.tensor(stimulus, dtype=torch.float32).unsqueeze(-1) # unsqueeze
 choices = torch.tensor(choices, dtype=torch.float32).unsqueeze(-1)  
 day_start = torch.tensor(day_start, dtype=torch.float32).unsqueeze(-1)
 reward_data = torch.tensor(reward_data, dtype=torch.float32).unsqueeze(-1)
-answer_data = torch.tensor(answer_data, dtype=torch.float32).unsqueeze(-1) 
+side_data = torch.tensor(side_data, dtype=torch.float32).unsqueeze(-1) 
 
 # Stack input data
 # Input positions correspond to how DNN/RNNGLM is coded, some input will be used for the GLM regression and learning rule function 
-inputs = torch.cat([stimulus[:,1:], stimulus[:,:-1], torch.ones_like(stimulus[:,:-1]), day_start[:,:-1], choices[:,:-1], reward_data[:,:-1]], dim=-1) 
+inputs = torch.cat([stimulus[:,1:], stimulus[:,:-1], torch.ones_like(stimulus[:,:-1]), day_start[:,:-1], choices[:,:-1], reward_data[:,:-1], side_data[:,:-1]], dim=-1) 
 target = choices[:,1:] # target = choices[1:] # Target is binary, shape (4999, 1) 
     
 #%%############################################################################
@@ -395,7 +395,9 @@ if not TRAIN_ONLY:
 ## Plot dW function 
 # Setup grid input data 
 cond_past = True # condition on past trials? You can change this 
-SS=2 # number of past trials to condition on... You can change this 
+SS=4 # number of past trials to condition on... You can change this 
+
+cond_past = False if args.glmw_mode == 1 else cond_past # irrelevant for DNNGLM 
 
 set_ylim = [-0.05, 0.05] 
 x_val = np.array([-1.        , -0.98670389, -0.84836067, -0.55465008, -0.30273722, 0.,
@@ -429,10 +431,10 @@ b_vals = torch.tensor(b_vals, dtype=torch.float32).unsqueeze(-1)
 w_stack = torch.cat([w_vals, b_vals], axis=-1)
 
 # Define answer and reward_data based on conditions
-answer_data = (stimulus > 0).float()
-reward_data = (choices == answer_data).float()
+side_data = (stimulus > 0).float()
+reward_data = (choices == side_data).float()
 day_start = torch.zeros_like(choices) 
-inputs_stack = torch.cat([stimulus, stimulus, torch.ones_like(stimulus), day_start, choices, reward_data], dim=-1)
+inputs_stack = torch.cat([stimulus, stimulus, torch.ones_like(stimulus), day_start, choices, reward_data, side_data], dim=-1)
 
 # Get dW and plot
 W0_est = w_stack 
@@ -447,7 +449,7 @@ xx_ = stimulus[:,-1].detach().numpy()
 yy_ = choices[:,-1].detach().numpy()
 ww_ = w_vals.detach().numpy()
 bb_ = b_vals.detach().numpy() 
-zz_ = answer_data[:,-1].detach().numpy() 
+zz_ = side_data[:,-1].detach().numpy() 
 rr_ = reward_data[:,-1].detach().numpy() 
     
 eps=0.01  

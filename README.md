@@ -5,10 +5,18 @@ This repository implements models to approximate animal learning rules using DNN
 
 ## Usage 
 
-Step 1: Download data using `DownloadData.ipynb`, which follows the preprocessing steps from https://github.com/pillowlab/psytrack_learning. (For review purposes, the processed data has already been provided in ./Figures/ibl_processed.csv so the user may skip this step.) 
+Step 1: Download data using `DownloadData.ipynb`, which follows the preprocessing steps from https://github.com/pillowlab/psytrack_learning. Then, please place the processed data in ./Figures/ibl_processed.csv  
 
-Step 2: Run `main.py` to train on the IBL data used in Ashwood et al. (NeurIPS’20). Use `python3 main.py --glmw_mode=0` for RNNGLM or `python3 main.py --glmw_mode=1` for DNNGLM.    
+Step 2: Run `main.py` to train on the IBL data used in Ashwood et al. (NeurIPS’20). Use `python3 main.py --glmw_mode=0` for RNNGLM or `python3 main.py --glmw_mode=1` for DNNGLM.   
 
+## Directory
+
+./README.md: This file.  
+./DownloadData.ipynb: Code for downloading and preprocessing data, adapted from https://github.com/pillowlab/psytrack_learning.  
+./main.py: Main script for loading data, fitting models, and inferring the learning update rule.  
+./models.py: Model definitions (RNNGLM, DNNGLM).  
+./Figures/: Directory for preprocessed data and generated figures.  
+./psytrack_learning/: Code adapted from https://github.com/pillowlab/psytrack_learning (used minimally).
 
 ## References
 

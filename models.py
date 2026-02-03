@@ -20,30 +20,21 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset 
 import random 
 
-
-GRID_DATA = False
-
 class DeltaDNNGLM(nn.Module):
     def __init__(self, input_size, hidden_size, truncation_len=100, num_layers=2, num_weights_mode=0):
         super(DeltaDNNGLM, self).__init__()
         self.hidden_size = hidden_size
         self.truncation_len = truncation_len 
         self.num_weights_mode = num_weights_mode # 0: stim+bias weights, 1: L+R+bias, 2: stim+last+bias 
-        if GRID_DATA: 
-            self.output_size = 1
-        else: 
-            if self.num_weights_mode == 0:
-                self.output_size = 2
-            elif self.num_weights_mode == 1:
-                self.output_size = 3 
-            elif self.num_weights_mode == 2:
-                self.output_size = 3 #4 
+        if self.num_weights_mode == 0:
+            self.output_size = 2
+        elif self.num_weights_mode == 1:
+            self.output_size = 3 
+        elif self.num_weights_mode == 2:
+            self.output_size = 3 #4 
 
         # learning rule coefficients 
-        if not GRID_DATA: 
-            self.scaling_factor = nn.Parameter(torch.full((self.output_size,), 1e-3)) # to help with initial stability 
-        else: 
-            self.scaling_factor = nn.Parameter(torch.full((self.output_size,), 1.0))
+        self.scaling_factor = nn.Parameter(torch.full((self.output_size,), 1e-3)) # to help with initial stability 
         
         # Define the DNN structure
         layers = []
@@ -82,17 +73,11 @@ class DeltaDNNGLM(nn.Module):
             out_chunk = []
             for tt in range(t_end-t_start): 
                 ii = t_start+tt
-                if GRID_DATA:
-                    x_tt = x[:,ii,1:] # neglect the 1st input for current stim 
-                else:
-                    x_tt = torch.cat([W[:,0,:], x[:,ii,1:]], dim=-1) # [1:] to neglect the 1st input for current stim 
+                x_tt = torch.cat([W[:,0,:], x[:,ii,1:]], dim=-1) # [1:] to neglect the 1st input for current stim 
                 dW = self.scaling_factor * self.dnn(x_tt).unsqueeze(1) # unsqueeze to add the time dimension for formatting purposes 
                 if not fix_W: 
                     W = W + dW
-                if GRID_DATA: # for the grid_data just output the predicted dW 
-                    out_chunk.append(dW)
-                else: 
-                    out_chunk.append(W)
+                out_chunk.append(W)
             out_chunk = torch.cat(out_chunk, dim=1)
             
             # Detach the hidden state after processing each chunk to truncate the gradient
@@ -131,16 +116,13 @@ class DeltaRNNGLM(nn.Module):
         self.num_layers = num_layers 
         self.num_rnn_layers = 1  
         self.num_weights_mode = num_weights_mode # 0: stim+bias weights, 1: L+R+bias, 2: stim+last+bias 
-        self.DNNfirst = DNNfirst # put DNN before RNN or after 
-        if GRID_DATA: 
-            self.state_size = 1
-        else: 
-            if self.num_weights_mode == 0:
-                self.state_size = 2
-            elif self.num_weights_mode == 1:
-                self.state_size = 3 
-            elif self.num_weights_mode == 2:
-                self.state_size = 3 #4 
+        self.DNNfirst = DNNfirst # put DNN before RNN or after  
+        if self.num_weights_mode == 0:
+            self.state_size = 2
+        elif self.num_weights_mode == 1:
+            self.state_size = 3 
+        elif self.num_weights_mode == 2:
+            self.state_size = 3 #4 
         
         # learning rule coefficients, helps with initial stability  
         self.scaling_factor = nn.Parameter(torch.full((self.state_size,), 1e-3))
@@ -214,10 +196,7 @@ class DeltaRNNGLM(nn.Module):
             out_chunk = []
             for tt in range(t_end-t_start): 
                 ii = t_start+tt 
-                if GRID_DATA:
-                    x_tt = x[:,ii,1:].unsqueeze(1) # [1:] to neglect the 1st input for current stim  
-                else:
-                    x_tt = torch.cat([W, x[:,ii,1:]], dim=-1).unsqueeze(1) # unsqueeze to add the time dimension for formatting purposes  
+                x_tt = torch.cat([W, x[:,ii,1:]], dim=-1).unsqueeze(1) # unsqueeze to add the time dimension for formatting purposes  
                 # _, h = self.gru(x_tt, h) 
                 if self.DNNfirst:
                     if self.num_layers >= 1: 
@@ -235,10 +214,7 @@ class DeltaRNNGLM(nn.Module):
                 # dW = 0.99*dW + (1-0.99)* self.scaling_factor * self.dnn(x_tt[:,0,:]) # for debugging 
                 if not fix_W:
                     W = W + dW 
-                if GRID_DATA: # for the grid_data just output the predicted dW 
-                    out_chunk.append(dW.unsqueeze(1)) 
-                else: 
-                    out_chunk.append(W.unsqueeze(1)) # unsqueeze to add the time dimension for formatting purposes 
+                out_chunk.append(W.unsqueeze(1)) # unsqueeze to add the time dimension for formatting purposes 
             out_chunk = torch.cat(out_chunk, dim=1)
             
             # Detach the hidden state after processing each chunk to truncate the gradient
