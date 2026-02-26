@@ -17,7 +17,7 @@ Step 2: Run `main.py` to train on the IBL data used in Ashwood et al. (NeurIPS’2
 ./models.py: Model definitions (RNNGLM, DNNGLM).  
 
 ./run_reinforce_crossval.sh: script to repeat run_reinforce.py across seeds and cross-validation folds.  
-./run_reinforce.py: benchmark on REINFORCE for IBL data. 
+./run_reinforce.py: benchmark on REINFORCE for IBL data.  
 ./ttest_crossval.py: significance tests on cross-validation results.   
 ./main_sim.py: Main script for the simulated experiments with REINFORCE.  
  
