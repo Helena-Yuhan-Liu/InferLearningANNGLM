@@ -22,14 +22,14 @@ from torch.utils.data import DataLoader, TensorDataset
 import random 
 
 import psytrack_learning as psy
-from psytrack_learning.getMAP import getMAP
-from psytrack_learning.helper.helperFunctions import update_hyper, hyper_to_list
-from psytrack_learning.helper.jacHessCheck import compHess, compHess_nolog
-from psytrack_learning.helper.invBlkTriDiag import getCredibleInterval
-from psytrack_learning.hyperparameter_optimization import evd_lossfun
-from psytrack_learning.learning_rules import RewardMax, PredictMax, REINFORCE, REINFORCE_base
-from psytrack_learning.simulate_learning import reward_max, predict_max, reinforce, reinforce_base
-from psytrack_learning.simulate_learning import simulate_learning
+# from psytrack_learning.getMAP import getMAP
+# from psytrack_learning.helper.helperFunctions import update_hyper, hyper_to_list
+# from psytrack_learning.helper.jacHessCheck import compHess, compHess_nolog
+# from psytrack_learning.helper.invBlkTriDiag import getCredibleInterval
+# from psytrack_learning.hyperparameter_optimization import evd_lossfun
+# from psytrack_learning.learning_rules import RewardMax, PredictMax, REINFORCE, REINFORCE_base
+# from psytrack_learning.simulate_learning import reward_max, predict_max, reinforce, reinforce_base
+# from psytrack_learning.simulate_learning import simulate_learning
 from models import DeltaDNNGLM, DeltaRNNGLM 
 
 import argparse
@@ -345,6 +345,18 @@ for ff in range(folds):
             print(f'Val Loss: {test_loss.item():.4e}, Log-Likelihood: {log_likelihood_test:.4f}, Accuracy: {test_accuracy * 100:.2f}%') 
             glm_weights_all[test_target_mask==1,:,:] = glm_weights_fold 
             
+            # save the LL for each subject and seed in .npy 
+            for tt in range(len(test_idx)): 
+                animal_tt = animal_list[test_idx[tt]] 
+                log_likelihood_test_tt = -nn.BCELoss()(test_outputs[tt].reshape(-1), \
+                                         val_target[tt].reshape(-1).float()).item()
+                if (args.glmw_mode ==0):
+                    val_seed_folder = './saved_pdf/RNNval_seeds/' 
+                elif args.glmw_mode ==1:                     
+                    val_seed_folder = './saved_pdf/DNNval_seeds/' 
+                os.makedirs(val_seed_folder, exist_ok=True) 
+                np.save(val_seed_folder+animal_tt+'_seed' + str(seed)+'_valLL.npy', log_likelihood_test_tt)             
+            
             # Save plot 
             val_mask = (test_target_mask == 1).numpy()
             val_animals = [animal for animal, mask in zip(animal_list, val_mask) if mask]
@@ -357,7 +369,7 @@ for ff in range(folds):
                 elif args.num_weights_mode == 2:
                     readin_weights = {"Wstim": 1, "h": 1, "Wbias": 1}
                 
-                fsave_prefix = './Figures/saved_npy/psytrack_animal_' + val_animals[plot_batch] + '_glmw_' + str(args.glmw_mode) + '_nl_' + str(args.num_layers) + '_nr_' + str(hidden_size) + '_lr_' + str(args.learning_rate) + '_ne_' + str(args.num_epoch) + '_wm_' + str(args.num_weights_mode)                
+                fsave_prefix = val_seed_folder + 'psytrack_animal_' + val_animals[plot_batch] + '_glmw_' + str(args.glmw_mode) + '_nl_' + str(args.num_layers) + '_nr_' + str(hidden_size) + '_lr_' + str(args.learning_rate) + '_ne_' + str(args.num_epoch) + '_wm_' + str(args.num_weights_mode)                
                 fig_Wrec = psy.plot_weights(glm_weights.detach().numpy().T, readin_weights) 
                 ax = fig_Wrec.gca() 
                 lines = [line for line in ax.get_lines()] 
