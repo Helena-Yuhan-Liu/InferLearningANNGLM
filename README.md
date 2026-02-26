@@ -12,14 +12,14 @@ Step 2: Run `main.py` to train on the IBL data used in Ashwood et al. (NeurIPS’2
 ## Directory
 
 ./README.md: This file.  
-./DownloadData.ipynb: Code for downloading and preprocessing data, adapted from https://github.com/pillowlab/psytrack_learning  
-./main.py: Main script for loading data, fitting models, and inferring the learning update rule 
-./models.py: Model definitions (RNNGLM, DNNGLM) 
+./DownloadData.ipynb: Code for downloading and preprocessing data, adapted from https://github.com/pillowlab/psytrack_learning.   
+./main.py: Main script for loading data, fitting models, and inferring the learning update rule.  
+./models.py: Model definitions (RNNGLM, DNNGLM).  
 
-./run_reinforce.py: benchmark on REINFORCE for IBL data
-./run_reinforce_crossval.sh: script to repeat run_reinforce.py across seeds and cross-validation folds 
-./ttest_crossval.py: significance tests on cross-validation results  
-./main_sim.py: Main script for the simulated experiments with REINFORCE 
+./run_reinforce.py: benchmark on REINFORCE for IBL data. 
+./run_reinforce_crossval.sh: script to repeat run_reinforce.py across seeds and cross-validation folds.  
+./ttest_crossval.py: significance tests on cross-validation results.   
+./main_sim.py: Main script for the simulated experiments with REINFORCE.  
  
 ./Figures/: Directory for the preprocessed data (and generated figures).  
 ./psytrack_learning/: Code modified from https://github.com/pillowlab/psytrack_learning (used minimally).
